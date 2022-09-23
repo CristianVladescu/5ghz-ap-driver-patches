@@ -57,7 +57,7 @@ root@debian11:~# iw list | grep MHz
                         * 5865 MHz [173] (disabled)
                  * short GI for 40 MHz
 ```
-This patch will ignore the EEPROM country code value in driver and use a user defined one.
+This patch will ignore in driver the value for wireless regulatory domain from EEPROM, and use the country specified in this patch.
 
 ## How to apply the patch to Debian 11
 First get the kernel source code and the required packages in order to compile the driver:
