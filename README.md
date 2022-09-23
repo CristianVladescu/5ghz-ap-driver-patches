@@ -139,7 +139,7 @@ root@debian11:~/linux-5.10.140# iw list | grep MHz
                         * 5845 MHz [169] (13.0 dBm)
                         * 5865 MHz [173] (13.0 dBm)
                  * short GI for 40 MHz
-root@debian11:~/linux-5.10.140# hostapd ../hostapd.conf 
+root@debian11:~/linux-5.10.140# hostapd ../deb-ath-user-regd/hostapd.conf 
 Configuration file: ../hostapd.conf
 wls16: interface state UNINITIALIZED->COUNTRY_UPDATE
 ACS: Automatic channel selection started, this may take a bit
