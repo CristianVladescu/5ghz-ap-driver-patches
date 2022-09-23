@@ -69,13 +69,13 @@ apt-get source linux
 ```
 Prepare the patch (instead of `CTRY_ROMANIA` use yours; you can find the full list [here](https://github.com/torvalds/linux/blob/c69cf88cda5faca0e411babb67ac0d8bfd8b4646/drivers/net/wireless/ath/regd.h#L61)):
 ```
-git clone https://github.com/CristianVladescu/ath-user-regd
-sed -i 's/<CountryCode to use>/CTRY_ROMANIA' ath-user-regd/ath.patch
+git clone https://github.com/CristianVladescu/deb-ath-user-regd
+sed -i 's/<CountryCode to use>/CTRY_ROMANIA' deb-ath-user-regd/ath-country.patch
 ```
 Compile ath module:
 ```
 cd linux-5.10.140
-patch -p1 < ../ath-user-regd/ath.patch
+patch -p1 < ../deb-ath-user-regd/ath-country.patch
 # instead of -j8 use the number of cores your CPU has
 time make -j8 M=$(pwd)/drivers/net/wireless/ath modules
 cp drivers/net/wireless/ath/ath.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/ath/
