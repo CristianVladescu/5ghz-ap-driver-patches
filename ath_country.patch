@@ -1,29 +1,28 @@
 diff --git a/drivers/net/wireless/ath/regd.c b/drivers/net/wireless/ath/regd.c
-index f15e7bd690b5..ef94991c638b 100644
+index f15e7bd690b5..b948ebcf2d60 100644
 --- a/drivers/net/wireless/ath/regd.c
 +++ b/drivers/net/wireless/ath/regd.c
-@@ -61,6 +61,11 @@ static int __ath_regd_init(struct ath_regulatory *reg);
+@@ -61,6 +61,9 @@ static int __ath_regd_init(struct ath_regulatory *reg);
  #define ATH_5GHZ_NO_MIDBAND	ATH_5GHZ_5150_5350, \
  				ATH_5GHZ_5725_5850
  
 +/* This can be used to override EEPROM factory burned country */
 +#define ATH_USER_COUNTRY <CountryCode to use>
-+/* DFS has to work still to use these channels for AP */
-+#define ATH_IR_ON_RADAR_FREQ true
 +
  /* Can be used for:
   * 0x60, 0x61, 0x62 */
  static const struct ieee80211_regdomain ath_world_regdom_60_61_62 = {
-@@ -415,7 +420,7 @@ static void ath_reg_apply_radar_flags(struct wiphy *wiphy,
+@@ -428,8 +431,7 @@ static void ath_reg_apply_radar_flags(struct wiphy *wiphy,
+ 		 *   do not allow AP mode
+ 		 */
+ 		if (!(ch->flags & IEEE80211_CHAN_DISABLED))
+-			ch->flags |= IEEE80211_CHAN_RADAR |
+-				     IEEE80211_CHAN_NO_IR;
++			ch->flags |= IEEE80211_CHAN_RADAR;
+ 	}
+ }
  
- 	for (i = 0; i < sband->n_channels; i++) {
- 		ch = &sband->channels[i];
--		if (!ath_is_radar_freq(ch->center_freq, reg))
-+		if (!ath_is_radar_freq(ch->center_freq, reg) || ATH_IR_ON_RADAR_FREQ)
- 			continue;
- 		/* We always enable radar detection/DFS on this
- 		 * frequency range. Additionally we also apply on
-@@ -690,6 +695,11 @@ static int __ath_regd_init(struct ath_regulatory *reg)
+@@ -690,6 +692,11 @@ static int __ath_regd_init(struct ath_regulatory *reg)
  
  	ath_regd_sanitize(reg);
  
@@ -35,10 +34,3 @@ index f15e7bd690b5..ef94991c638b 100644
  	printk(KERN_DEBUG "ath: EEPROM regdomain: 0x%0x\n", reg->current_rd);
  
  	if (!ath_regd_is_eeprom_valid(reg)) {
-@@ -809,4 +819,4 @@ u32 ath_regd_get_band_ctl(struct ath_regulatory *reg,
- 		return NO_CTL;
- 	}
- }
--EXPORT_SYMBOL(ath_regd_get_band_ctl);
-+EXPORT_SYMBOL(ath_regd_get_band_ctl);
-\ No newline at end of file
