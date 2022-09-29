@@ -9,6 +9,18 @@ root@debian11:~# dmesg | grep ath
 [23629.454421] ath: EEPROM indicates we should expect a direct regpair map
 [23629.454422] ath: Country alpha2 being used: 00 <<<< country unspecified so broadcasting on 5GHz channels cannot be granted
 [23629.454422] ath: Regpair used: 0x6c
+root@debian:~# iw reg get
+global
+country 00: DFS-UNSET
+        (755 - 928 @ 2), (N/A, 20), (N/A), PASSIVE-SCAN
+        (2402 - 2472 @ 40), (N/A, 20), (N/A)
+        (2457 - 2482 @ 20), (N/A, 20), (N/A), AUTO-BW, PASSIVE-SCAN
+        (2474 - 2494 @ 20), (N/A, 20), (N/A), NO-OFDM, PASSIVE-SCAN
+        (5170 - 5250 @ 80), (N/A, 20), (N/A), AUTO-BW, PASSIVE-SCAN
+        (5250 - 5330 @ 80), (N/A, 20), (0 ms), DFS, AUTO-BW, PASSIVE-SCAN
+        (5490 - 5730 @ 160), (N/A, 20), (0 ms), DFS, PASSIVE-SCAN
+        (5735 - 5835 @ 80), (N/A, 20), (N/A), PASSIVE-SCAN
+        (57240 - 63720 @ 2160), (N/A, 0), (N/A)
 ```
 Because of this all 5GHz channels will be flagged with `no IR` (radiation initialization not allowed) in kernel, so they cannot be used in AP mode, only in managed/client mode.  
 ```
@@ -57,7 +69,10 @@ root@debian11:~# iw list | grep MHz
                         * 5865 MHz [173] (disabled)
                  * short GI for 40 MHz
 ```
-This patch will ignore in driver the value for wireless regulatory domain from EEPROM, and use the country specified in this patch.
+## Solution
+There are 2 ways to solve this with driver patches:
+ - for kernel 5.10 `ath_country.patch` will ignore in driver the value for wireless regulatory domain from EEPROM, and use the country specified in this patch
+ - for kernel 5.13 (and 5.10) `ath_etsi_regd.patch` will define wireless regulatory domain for ETSI region
 
 ## How to apply the patch to Debian 11
 First get the kernel source code and the required packages in order to compile the driver:
@@ -66,10 +81,14 @@ apt-get install build-essential git
 apt-get build-dep linux
 # this will download kernel source code in current working directory
 apt-get source linux
+# or if you're not using the latest kernel
+wget https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.13.19.tar.xz
+unxz -v linux-5.13.19.tar.xz
+tar xvf linux-5.13.19.tar
 ```
-Prepare the patch (instead of `CTRY_ROMANIA` use yours; you can find the full list [here](https://github.com/torvalds/linux/blob/c69cf88cda5faca0e411babb67ac0d8bfd8b4646/drivers/net/wireless/ath/regd.h#L61)):
+Clone this repo `git clone https://github.com/CristianVladescu/deb-ath-user-regd`.
+If you're going to use `ath_country.patch`, edit the patch (instead of `CTRY_ROMANIA` use yours; you can find the full list [here](https://github.com/torvalds/linux/blob/c69cf88cda5faca0e411babb67ac0d8bfd8b4646/drivers/net/wireless/ath/regd.h#L61)):
 ```
-git clone https://github.com/CristianVladescu/deb-ath-user-regd
 sed -i 's/<CountryCode to use>/CTRY_ROMANIA/' deb-ath-user-regd/ath_country.patch
 ```
 Compile ath module:
@@ -78,11 +97,24 @@ cd linux-5.10.140
 cp -v /boot/config-$(uname -r) .config
 make oldconfig
 patch -p1 < ../deb-ath-user-regd/ath_country.patch
-# instead of -j8 use the number of cores your CPU has
+# or
+patch -p1 < ../deb-ath-user-regd/ath_etsi_regd.patch
+# either compile the whole kernel (instead of -j8 use the number of cores your CPU has)
 time make -j8 modules
 # after first compile, if you need to recompile, you can do it faster by compiling only the ath module
 time make -j8 M=$(pwd)/drivers/net/wireless/ath modules
+# or, you can compile only the driver using the current kernel source headers (if available)
+apt isntall linux-headers-$(uname -r)
+pushd drivers/net/wireless/ath
+make -C /lib/modules/`uname -r`/build M=$PWD
+popd
+# then copy the newly compiled driver
 cp drivers/net/wireless/ath/ath.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/ath/
+# if you also want to install the kernel you just compiled
+make modules_install
+make install
+update-initramfs -c -k 5.13.19
+update-grub
 ```
 Reboot or soft "replug" the PCI device:
 ```
@@ -153,4 +185,23 @@ wls16: ACS-COMPLETED freq=5805 channel=161
 Using interface wls16 with hwaddr 00:0e:8e:72:fb:ac and ssid "WIFI_5G"
 wls16: interface state ACS->ENABLED
 wls16: AP-ENABLED 
+```
+
+## How to apply the patch to Proxmox VE 7
+```
+git clone https://git.proxmox.com/git/pve-kernel.git
+cd pve-kernel
+git checkout -b pve-kernel-5.13 origin/pve-kernel-5.13
+
+make submodule
+or
+git submodule update --init --recursive
+or
+git submodule foreach git fetch --tags
+git submodule update --init
+
+apt install devscripts
+mk-build-deps --install debian/control.in
+make deb # no need to specify -jx, it will utilize all cores
+dpkg -i *.deb
 ```
