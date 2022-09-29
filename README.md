@@ -219,6 +219,7 @@ or
 git submodule foreach git fetch --tags
 git submodule update --init
 
+sed -i 's/<CountryCode to use>/CTRY_ROMANIA/' ../deb-ath-user-regd/ath_country.patch
 cp ../deb-ath-user-regd/ath_country.patch patches/kernel/
 # or
 cp ../deb-ath-user-regd/ath_etsi_regd.patch patches/kernel/
