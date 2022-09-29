@@ -85,6 +85,7 @@ apt-get source linux
 wget https://cdn.kernel.org/pub/linux/kernel/v5.x/linux-5.13.19.tar.xz
 unxz -v linux-5.13.19.tar.xz
 tar xvf linux-5.13.19.tar
+apt-get install build-essential libncurses-dev bison flex libssl-dev libelf-dev
 ```
 Clone this repo `git clone https://github.com/CristianVladescu/deb-ath-user-regd`.
 If you're going to use `ath_country.patch`, edit the patch (instead of `CTRY_ROMANIA` use yours; you can find the full list [here](https://github.com/torvalds/linux/blob/c69cf88cda5faca0e411babb67ac0d8bfd8b4646/drivers/net/wireless/ath/regd.h#L61)):
