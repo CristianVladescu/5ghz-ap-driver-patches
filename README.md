@@ -227,4 +227,5 @@ apt install devscripts
 mk-build-deps --install debian/control.in
 make deb # no need to specify -jx, it will utilize all cores
 dpkg -i *.deb
+reboot
 ```
