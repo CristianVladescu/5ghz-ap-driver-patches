@@ -175,6 +175,24 @@ root@debian11:~/linux-5.10.140# iw list | grep MHz
                         * 5845 MHz [169] (13.0 dBm)
                         * 5865 MHz [173] (13.0 dBm)
                  * short GI for 40 MHz
+root@debian:~/linux-5.10.140# iw reg get
+global
+country RO: DFS-ETSI
+        (2400 - 2483 @ 40), (N/A, 20), (N/A)
+        (5150 - 5250 @ 80), (N/A, 23), (N/A), NO-OUTDOOR, AUTO-BW
+        (5250 - 5350 @ 80), (N/A, 20), (0 ms), NO-OUTDOOR, DFS, AUTO-BW
+        (5470 - 5725 @ 160), (N/A, 26), (0 ms), DFS
+        (5725 - 5875 @ 80), (N/A, 13), (N/A)
+        (57000 - 66000 @ 2160), (N/A, 40), (N/A)
+
+phy#2
+country RO: DFS-ETSI
+        (2400 - 2483 @ 40), (N/A, 20), (N/A)
+        (5150 - 5250 @ 80), (N/A, 23), (N/A), NO-OUTDOOR, AUTO-BW
+        (5250 - 5350 @ 80), (N/A, 20), (0 ms), NO-OUTDOOR, DFS, AUTO-BW
+        (5470 - 5725 @ 160), (N/A, 26), (0 ms), DFS
+        (5725 - 5875 @ 80), (N/A, 13), (N/A)
+        (57000 - 66000 @ 2160), (N/A, 40), (N/A)
 root@debian11:~/linux-5.10.140# hostapd ../deb-ath-user-regd/hostapd.conf 
 Configuration file: ../hostapd.conf
 wls16: interface state UNINITIALIZED->COUNTRY_UPDATE
