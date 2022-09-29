@@ -193,9 +193,9 @@ git clone https://git.proxmox.com/git/pve-kernel.git
 cd pve-kernel
 git checkout -b pve-kernel-5.13 origin/pve-kernel-5.13
 
-make submodule
-or
 git submodule update --init --recursive
+or
+make submodule
 or
 git submodule foreach git fetch --tags
 git submodule update --init
