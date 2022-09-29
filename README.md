@@ -222,6 +222,10 @@ git submodule update --init
 cp ../deb-ath-user-regd/ath_country.patch patches/kernel/
 # or
 cp ../deb-ath-user-regd/ath_etsi_regd.patch patches/kernel/
+# or
+pushd submodules/ubuntu-impish
+patch -p1 < ../../../deb-ath-user-regd/<patch needed>.patch
+popd
 
 apt install devscripts
 mk-build-deps --install debian/control.in
