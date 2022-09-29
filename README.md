@@ -208,6 +208,7 @@ wls16: AP-ENABLED
 ## How to apply the patch to Proxmox VE 7
 ```
 git clone https://git.proxmox.com/git/pve-kernel.git
+git clone https://github.com/CristianVladescu/deb-ath-user-regd
 cd pve-kernel
 git checkout -b pve-kernel-5.13 origin/pve-kernel-5.13
 
@@ -217,6 +218,10 @@ make submodule
 or
 git submodule foreach git fetch --tags
 git submodule update --init
+
+cp ../deb-ath-user-regd/ath_country.patch patches/kernel/
+# or
+cp ../deb-ath-user-regd/ath_etsi_regd.patch patches/kernel/
 
 apt install devscripts
 mk-build-deps --install debian/control.in
