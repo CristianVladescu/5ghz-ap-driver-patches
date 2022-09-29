@@ -1,5 +1,5 @@
 # ath-user-regd
-Atheros driver patch to override the country set in the Wi-Fi card's EEPROM
+Atheros driver patch to override the country set in the Wi-Fi card's EEPROM. This is an adaption for Debian based distros of these Arch Linux patches https://github.com/twisteroidambassador/arch-linux-ath-user-regd and https://github.com/CodePhase/patch-atheros-regdom .
 
 ## Issue
 Some Atheros Wi-Fi PCIe cards (like QCA6174 that I have) come with a [global wireless regulatory domain](https://wireless.wiki.kernel.org/en/users/drivers/ath#eeprom_world_regulatory_domain) burned in EEPROM.
