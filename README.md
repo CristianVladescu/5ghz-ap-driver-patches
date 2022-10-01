@@ -105,7 +105,7 @@ time make -j8 modules
 # after first compile, if you need to recompile, you can do it faster by compiling only the ath module
 time make -j8 M=$(pwd)/drivers/net/wireless/ath modules
 # or, you can compile only the driver using the current kernel source headers (if available)
-apt isntall linux-headers-$(uname -r)
+apt install linux-headers-$(uname -r)
 pushd drivers/net/wireless/ath
 make -C /lib/modules/`uname -r`/build M=$PWD
 popd
