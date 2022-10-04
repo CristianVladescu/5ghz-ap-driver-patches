@@ -1,4 +1,4 @@
-# ath-user-regd
+# deb-ath-user-regd
 Atheros driver patch to override the country set in the Wi-Fi card's EEPROM. This is an adaption for Debian based distros of these Arch Linux patches https://github.com/twisteroidambassador/arch-linux-ath-user-regd and https://github.com/CodePhase/patch-atheros-regdom .
 
 ## Issue
@@ -73,6 +73,11 @@ root@debian11:~# iw list | grep MHz
 There are 2 ways to solve this with driver patches:
  - for kernel 5.10 `ath_country.patch` will ignore, in driver, the value for wireless regulatory domain from EEPROM, and use the country specified in this patch
  - for kernel 5.13 (and 5.10) `ath_etsi_regd.patch` will define wireless regulatory domain for ETSI region
+Also, for QCA9984, apply `ath10k_iram.patch` to workaround this issue:
+```
+root@debian:~# dmesg | grep "failed to copy target iram"
+[    9.043246] ath10k_pci 0000:00:10.0: failed to copy target iram contents: -12
+```
 
 ## How to apply the patch to Debian 11
 First get the kernel source code and the required packages in order to compile the driver:
@@ -113,6 +118,7 @@ popd
 cp drivers/net/wireless/ath/ath.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/ath/
 # if you also want to install the kernel you just compiled
 make modules_install
+time make -j8
 make install
 update-initramfs -c -k 5.13.19
 update-grub
