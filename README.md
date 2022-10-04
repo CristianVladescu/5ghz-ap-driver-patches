@@ -73,6 +73,7 @@ root@debian11:~# iw list | grep MHz
 There are 2 ways to solve this with driver patches:
  - for kernel 5.10 `ath_country.patch` will ignore, in driver, the value for wireless regulatory domain from EEPROM, and use the country specified in this patch
  - for kernel 5.13 (and 5.10) `ath_etsi_regd.patch` will define wireless regulatory domain for ETSI region
+
 Also, for QCA9984, apply `ath10k_iram.patch` to workaround this issue:
 ```
 root@debian:~# dmesg | grep "failed to copy target iram"
