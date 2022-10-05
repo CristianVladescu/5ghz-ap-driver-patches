@@ -1,7 +1,9 @@
-# deb-ath-user-regd
-Atheros driver patch to override the country set in the Wi-Fi card's EEPROM. This is an adaptation for Debian based distros of these Arch Linux patches https://github.com/twisteroidambassador/arch-linux-ath-user-regd and https://github.com/CodePhase/patch-atheros-regdom .
+# 5ghz-ap-driver-patches
+Driver patches to fix 5GHz AP mode on some Wi-Fi network adapters.  
+This is an adaptation for Debian based distros of these Arch Linux patches https://github.com/twisteroidambassador/arch-linux-ath-user-regd and https://github.com/CodePhase/patch-atheros-regdom .
 
-## Issue
+##Issues
+### World rergulatory domain issue
 Some Atheros Wi-Fi PCIe cards (like QCA6174 that I have) come with a [global wireless regulatory domain](https://wireless.wiki.kernel.org/en/users/drivers/ath#eeprom_world_regulatory_domain) burned in EEPROM.
 ```
 root@debian11:~# dmesg | grep ath
@@ -69,15 +71,144 @@ root@debian11:~# iw list | grep MHz
                         * 5865 MHz [173] (disabled)
                  * short GI for 40 MHz
 ```
-## Solution
+#### Solution
 There are 2 ways to solve this with driver patches:
- - for kernel 5.10 `ath_country.patch` will ignore, in driver, the value for wireless regulatory domain from EEPROM, and use the country specified in this patch
+ - for kernel 5.10 `ath_country.patch` will ignore, in driver, the value for wireless regulatory domain from EEPROM, and use the country specified in this patch (edit the country before applying it, `sed -i 's/<CountryCode to use>/CTRY_ROMANIA/' 5ghz-ap-driver-patch/ath_country.patch`, and instead of `CTRY_ROMANIA` use yours from [this list](https://github.com/torvalds/linux/blob/c69cf88cda5faca0e411babb67ac0d8bfd8b4646/drivers/net/wireless/ath/regd.h#L61))
  - for kernel 5.13 (and 5.10) `ath_etsi_regd.patch` will define and apply the wireless regulatory domain for ETSI region (I have not included other regions, but you can use this as an example)
 
-Also, for QCA9984, apply `ath10k_iram.patch` to workaround this issue:
+### QCA9984 not initializing on kernel 5.13 due to IRAM access issue
+For QCA9984, apply `ath10k_iram.patch` to workaround this issue:
 ```
 root@debian:~# dmesg | grep "failed to copy target iram"
 [    9.043246] ath10k_pci 0000:00:10.0: failed to copy target iram contents: -12
+```
+### Intel `no IR` issue
+`iwlwifi` driver used for Intel adapters, blatantly disables AP mode. At the moment, I could not find a complete solution, but I was able to remove to `no IR` flag by applying `iwlwifi_no_ir.patch`. However, when AP is started on 5GHz, the firmware/microcode is crashing. Tested Intel® Wireless-AC 7265/8260/9260 with kernel 5.13.19, 5.19.11, and all crash.
+```
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Microcode SW error detected. Restarting 0x0.
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Start IWL Error Log Dump:
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Status: 0x00000040, count: 6
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Loaded firmware version: 46.6f9f215c.0 9260-th-b0-jf-b0-46.ucode
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x000014FC | ADVANCED_SYSASSERT          
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x000022F0 | trm_hw_status0
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | trm_hw_status1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00481532 | branchlink2
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x004715DE | interruptlink1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | interruptlink2
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000024 | data1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000F61 | data2
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00090010 | data3
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | beacon time
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0050796D | tsf low
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | tsf hi
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | time gp1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0050797C | time gp2
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000001 | uCode revision type
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0000002E | uCode version major
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x6F9F215C | uCode version minor
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000321 | hw version
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x18C89004 | board version
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x8026F402 | hcmd
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00022000 | isr0
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | isr1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x08201802 | isr2
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00400080 | isr3
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | isr4
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x002801D1 | last cmd Id
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0001AF02 | wait_event
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | l2p_control
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | l2p_duration
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | l2p_mhvalid
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | l2p_addr_match
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0000008F | lmpm_pmg_sel
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x28010826 | timestamp
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0000284C | flow_handler
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Start IWL Error Log Dump:
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Status: 0x00000040, count: 7
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x20000070 | NMI_INTERRUPT_LMAC_FATAL
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | umac branchlink1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xC0088BEE | umac branchlink2
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xC0084484 | umac interruptlink1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xC0084484 | umac interruptlink2
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000800 | umac data1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xC0084484 | umac data2
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xDEADBEEF | umac data3
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0000002E | umac major
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x6F9F215C | umac minor
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0050798E | frame pointer
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xC088627C | stack pointer
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0029012B | last host cmd
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | isr status reg
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: IML/ROM dump:
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | IML/ROM error/state
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000003 | IML/ROM data1
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Fseq Registers:
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00540280 | FSEQ_ERROR_CODE
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x00000000 | FSEQ_TOP_INIT_VERSION
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x85B98B3B | FSEQ_CNVIO_INIT_VERSION
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0000A371 | FSEQ_OTP_VERSION
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xFACFE797 | FSEQ_TOP_CONTENT_VERSION
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xE6201AF9 | FSEQ_ALIVE_TOKEN
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0xF6E5B2BB | FSEQ_CNVI_ID
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x12D0E108 | FSEQ_CNVR_ID
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x01000200 | CNVI_AUX_MISC_CHIP
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x01300202 | CNVR_AUX_MISC_CHIP
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0000485B | CNVR_SCU_SD_REGS_SD_REG_DIG_DCDC_VTRIM
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: 0x0BADCAFE | CNVR_SCU_SD_REGS_SD_REG_ACTIVE_VDIG_MIRROR
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: WRT: Collecting data: ini trigger 4 fired (delay=0ms).
+Oct 05 12:48:12 debian kernel: ieee80211 phy0: Hardware restart was requested
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: FW error in SYNC CMD BINDING_CONTEXT_CMD
+Oct 05 12:48:12 debian kernel: CPU: 14 PID: 3776 Comm: hostapd Tainted: G            E     5.13.19 #1
+Oct 05 12:48:12 debian kernel: Hardware name: QEMU Standard PC (i440FX + PIIX, 1996), BIOS rel-1.14.0-0-g155821a1990b-prebuilt.qemu.org 04/01/2014
+Oct 05 12:48:12 debian kernel: Call Trace:
+Oct 05 12:48:12 debian kernel:  dump_stack+0x76/0x94
+Oct 05 12:48:12 debian kernel:  iwl_trans_txq_send_hcmd+0x385/0x390 [iwlwifi]
+Oct 05 12:48:12 debian kernel:  ? finish_wait+0x80/0x80
+Oct 05 12:48:12 debian kernel:  iwl_trans_send_cmd+0x84/0xe0 [iwlwifi]
+Oct 05 12:48:12 debian kernel:  iwl_mvm_send_cmd_status+0x2a/0xa0 [iwlmvm]
+Oct 05 12:48:12 debian kernel:  iwl_mvm_send_cmd_pdu_status+0x4b/0x70 [iwlmvm]
+Oct 05 12:48:12 debian kernel:  iwl_mvm_binding_update+0x142/0x240 [iwlmvm]
+Oct 05 12:48:12 debian kernel:  iwl_mvm_start_ap_ibss+0x99/0x280 [iwlmvm]
+Oct 05 12:48:12 debian kernel:  ? __cond_resched+0x16/0x40
+Oct 05 12:48:12 debian kernel:  ieee80211_start_ap+0x507/0x740 [mac80211]
+Oct 05 12:48:12 debian kernel:  nl80211_start_ap+0x823/0xae0 [cfg80211]
+Oct 05 12:48:12 debian kernel:  ? lock_timer_base+0x61/0x80
+Oct 05 12:48:12 debian kernel:  genl_family_rcv_msg_doit+0xea/0x150
+Oct 05 12:48:12 debian kernel:  genl_rcv_msg+0xde/0x1d0
+Oct 05 12:48:12 debian kernel:  ? nl80211_join_ibss+0x480/0x480 [cfg80211]
+Oct 05 12:48:12 debian kernel:  ? genl_get_cmd+0xd0/0xd0
+Oct 05 12:48:12 debian kernel:  netlink_rcv_skb+0x50/0xf0
+Oct 05 12:48:12 debian kernel:  genl_rcv+0x24/0x40
+Oct 05 12:48:12 debian kernel:  netlink_unicast+0x201/0x2c0
+Oct 05 12:48:12 debian kernel:  netlink_sendmsg+0x243/0x480
+Oct 05 12:48:12 debian kernel:  sock_sendmsg+0x5e/0x60
+Oct 05 12:48:12 debian kernel:  ____sys_sendmsg+0x22e/0x270
+Oct 05 12:48:12 debian kernel:  ? import_iovec+0x17/0x20
+Oct 05 12:48:12 debian kernel:  ? sendmsg_copy_msghdr+0x7c/0xa0
+Oct 05 12:48:12 debian kernel:  ? __check_object_size+0x46/0x150
+Oct 05 12:48:12 debian kernel:  ___sys_sendmsg+0x75/0xb0
+Oct 05 12:48:12 debian kernel:  ? ___sys_recvmsg+0x8e/0x100
+Oct 05 12:48:12 debian kernel:  ? __wake_up_common_lock+0x8a/0xc0
+Oct 05 12:48:12 debian kernel:  ? __check_object_size+0x46/0x150
+Oct 05 12:48:12 debian kernel:  ? __cond_resched+0x16/0x40
+Oct 05 12:48:12 debian kernel:  ? release_sock+0x19/0x90
+Oct 05 12:48:12 debian kernel:  ? _raw_spin_unlock_bh+0xa/0x20
+Oct 05 12:48:12 debian kernel:  ? sock_setsockopt+0xff/0xfa0
+Oct 05 12:48:12 debian kernel:  __sys_sendmsg+0x59/0xa0
+Oct 05 12:48:12 debian kernel:  do_syscall_64+0x40/0x80
+Oct 05 12:48:12 debian kernel:  entry_SYSCALL_64_after_hwframe+0x44/0xae
+Oct 05 12:48:12 debian kernel: RIP: 0033:0x7ff9e475ffc3
+Oct 05 12:48:12 debian kernel: Code: 64 89 02 48 c7 c0 ff ff ff ff eb b7 66 2e 0f 1f 84 00 00 00 00 00 90 64 8b 04 25 18 00 00 00 85 c0 75 14 b8 2e 00 00 00 0f 05 <48> 3d 00 f0 ff ff 77 55 c3 0f 1f 40 00 48 83 ec 28 89 54 24 1c 48
+Oct 05 12:48:12 debian kernel: RSP: 002b:00007ffc0174a2e8 EFLAGS: 00000246 ORIG_RAX: 000000000000002e
+Oct 05 12:48:12 debian kernel: RAX: ffffffffffffffda RBX: 000055aa1dade650 RCX: 00007ff9e475ffc3
+Oct 05 12:48:12 debian kernel: RDX: 0000000000000000 RSI: 00007ffc0174a320 RDI: 0000000000000004
+Oct 05 12:48:12 debian kernel: RBP: 000055aa1daeaae0 R08: 0000000000000004 R09: 00007ff9e4831be0
+Oct 05 12:48:12 debian kernel: R10: 00007ffc0174a3f4 R11: 0000000000000246 R12: 000055aa1dade560
+Oct 05 12:48:12 debian kernel: R13: 00007ffc0174a320 R14: 00007ffc0174a3f4 R15: 000055aa1daeab30
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Failed to send binding (action:1): -5
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: Failed to remove MAC context: -5
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: PHY ctxt cmd error. ret=-5
+Oct 05 12:48:12 debian kernel: iwlwifi 0000:00:10.0: iwl_trans_wait_tx_queues_empty bad state = 0
 ```
 
 ## How to apply the patch to Debian 11
@@ -93,23 +224,15 @@ unxz -v linux-5.13.19.tar.xz
 tar xvf linux-5.13.19.tar
 apt-get install build-essential libncurses-dev bison flex libssl-dev libelf-dev
 ```
-Clone this repo `git clone https://github.com/CristianVladescu/deb-ath-user-regd`.
-If you're going to use `ath_country.patch`, edit the patch (instead of `CTRY_ROMANIA` use yours; you can find the full list [here](https://github.com/torvalds/linux/blob/c69cf88cda5faca0e411babb67ac0d8bfd8b4646/drivers/net/wireless/ath/regd.h#L61)):
-```
-sed -i 's/<CountryCode to use>/CTRY_ROMANIA/' deb-ath-user-regd/ath_country.patch
-```
+Clone this repo `git clone https://github.com/CristianVladescu/5ghz-ap-driver-patches`.
 Compile ath module:
 ```
 cd linux-5.10.140
 cp -v /boot/config-$(uname -r) .config
 make oldconfig
-patch -p1 < ../deb-ath-user-regd/ath_country.patch
-# or
-patch -p1 < ../deb-ath-user-regd/ath_etsi_regd.patch
+patch -p1 < ../5ghz-ap-driver-patches/<patch needed>
 # either compile the whole kernel (instead of -j8 use the number of cores your CPU has)
 time make -j8 modules
-# after first compile, if you need to recompile, you can do it faster by compiling only the ath module
-time make -j8 M=$(pwd)/drivers/net/wireless/ath modules
 # or, you can compile only the driver using the current kernel source headers (if available)
 apt install linux-headers-$(uname -r)
 pushd drivers/net/wireless/ath
@@ -117,6 +240,9 @@ make -C /lib/modules/`uname -r`/build M=$PWD
 popd
 # then copy the newly compiled driver
 cp drivers/net/wireless/ath/ath.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/ath/
+cp drivers/net/wireless/ath/ath10k/ath10k_core.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/ath/ath10k/
+cp drivers/net/wireless/ath/ath10k/ath10k_pci.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/ath/ath10k/
+cp drivers/net/wireless/intel/iwlwifi/iwlwifi.ko /lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/
 # if you also want to install the kernel you just compiled
 make modules_install
 time make -j8
@@ -131,9 +257,11 @@ lspci
 # mine is
 # 00:10.0 Network controller: Qualcomm Atheros QCA6174 802.11ac Wireless Network Adapter (rev 32)
 echo 0000\:00\:10.0 > /sys/bus/pci/drivers/ath10k_pci/unbind
+echo 0000\:00\:10.0 > /sys/bus/pci/drivers/iwlwifi/unbind
 echo 1 > /sys/bus/pci/devices/0000\:00\:10.0/remove
 rmmod ath10k_pci ath10k_core ath
 insmod /lib/modules/$(uname -r)/kernel/drivers/net/wireless/ath/ath.ko
+insmod /lib/modules/$(uname -r)/kernel/drivers/net/wireless/intel/iwlwifi/iwlwifi.ko
 echo "3" > /sys/bus/pci/rescan
 ```
 Now 5GHz channels available in your country can be used for starting an AP.  
@@ -250,13 +378,10 @@ or
 git submodule foreach git fetch --tags
 git submodule update --init
 
-sed -i 's/<CountryCode to use>/CTRY_ROMANIA/' ../deb-ath-user-regd/ath_country.patch
-cp ../deb-ath-user-regd/ath_country.patch patches/kernel/
-# or
-cp ../deb-ath-user-regd/ath_etsi_regd.patch patches/kernel/
+cp ../5ghz-ap-driver-patches/<patch needed>.patch patches/kernel/
 # or
 pushd submodules/ubuntu-impish
-patch -p1 < ../../../deb-ath-user-regd/<patch needed>.patch
+patch -p1 < ../../../5ghz-ap-driver-patches/<patch needed>.patch
 popd
 
 apt install devscripts
