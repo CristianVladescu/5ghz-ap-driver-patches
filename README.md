@@ -1,5 +1,5 @@
 # deb-ath-user-regd
-Atheros driver patch to override the country set in the Wi-Fi card's EEPROM. This is an adaption for Debian based distros of these Arch Linux patches https://github.com/twisteroidambassador/arch-linux-ath-user-regd and https://github.com/CodePhase/patch-atheros-regdom .
+Atheros driver patch to override the country set in the Wi-Fi card's EEPROM. This is an adaptation for Debian based distros of these Arch Linux patches https://github.com/twisteroidambassador/arch-linux-ath-user-regd and https://github.com/CodePhase/patch-atheros-regdom .
 
 ## Issue
 Some Atheros Wi-Fi PCIe cards (like QCA6174 that I have) come with a [global wireless regulatory domain](https://wireless.wiki.kernel.org/en/users/drivers/ath#eeprom_world_regulatory_domain) burned in EEPROM.
@@ -72,7 +72,7 @@ root@debian11:~# iw list | grep MHz
 ## Solution
 There are 2 ways to solve this with driver patches:
  - for kernel 5.10 `ath_country.patch` will ignore, in driver, the value for wireless regulatory domain from EEPROM, and use the country specified in this patch
- - for kernel 5.13 (and 5.10) `ath_etsi_regd.patch` will define wireless regulatory domain for ETSI region
+ - for kernel 5.13 (and 5.10) `ath_etsi_regd.patch` will define and apply the wireless regulatory domain for ETSI region (I have not included other regions, but you can use this as an example)
 
 Also, for QCA9984, apply `ath10k_iram.patch` to workaround this issue:
 ```
@@ -211,6 +211,29 @@ wls16: ACS-COMPLETED freq=5805 channel=161
 Using interface wls16 with hwaddr 00:0e:8e:72:fb:ac and ssid "WIFI_5G"
 wls16: interface state ACS->ENABLED
 wls16: AP-ENABLED 
+```
+To check what link speed clients negotiated:
+```
+root@debian:~# hostapd_cli all_sta
+Selected interface 'wls16'
+74:e5:f9:d3:2a:27
+...
+root@debian:~# iw wls16 station get 74:e5:f9:d3:2a:27
+Station 74:e5:f9:2a:d3:89 (on wls16)
+        inactive time:  908 ms
+        rx bytes:       456860507
+        rx packets:     298140
+        tx bytes:       1114720
+        tx packets:     14758
+        tx retries:     1753
+        tx failed:      0
+        rx drop misc:   1
+        signal:         -56 [-62, -62] dBm
+        signal avg:     -55 [-62, -62] dBm
+        tx bitrate:     866.7 MBit/s VHT-MCS 9 160MHz short GI VHT-NSS 1
+        tx duration:    988247 us
+        rx bitrate:     1170.0 MBit/s VHT-MCS 6 160MHz short GI VHT-NSS 2
+...
 ```
 
 ## How to apply the patch to Proxmox VE 7
