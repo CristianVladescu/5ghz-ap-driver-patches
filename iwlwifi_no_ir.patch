@@ -1,0 +1,15 @@
+diff --git a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c b/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
+index 9040da3dcce3..3c3e9e745753 100644
+--- a/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
++++ b/drivers/net/wireless/intel/iwlwifi/iwl-nvm-parse.c
+@@ -1305,8 +1305,8 @@ static u32 iwl_nvm_get_regdom_bw_flags(const u16 *nvm_chan,
+ 	if (!(nvm_flags & NVM_CHANNEL_160MHZ))
+ 		flags |= NL80211_RRF_NO_160MHZ;
+ 
+-	if (!(nvm_flags & NVM_CHANNEL_ACTIVE))
+-		flags |= NL80211_RRF_NO_IR;
++	// if (!(nvm_flags & NVM_CHANNEL_ACTIVE))
++	// 	flags |= NL80211_RRF_NO_IR;
+ 
+ 	if (nvm_flags & NVM_CHANNEL_RADAR)
+ 		flags |= NL80211_RRF_DFS;
