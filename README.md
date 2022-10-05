@@ -2,7 +2,7 @@
 Driver patches to fix 5GHz AP mode on some Wi-Fi network adapters.  
 This is an adaptation for Debian based distros of these Arch Linux patches https://github.com/twisteroidambassador/arch-linux-ath-user-regd and https://github.com/CodePhase/patch-atheros-regdom .
 
-##Issues
+## Issues
 ### World rergulatory domain issue
 Some Atheros Wi-Fi PCIe cards (like QCA6174 that I have) come with a [global wireless regulatory domain](https://wireless.wiki.kernel.org/en/users/drivers/ath#eeprom_world_regulatory_domain) burned in EEPROM.
 ```
