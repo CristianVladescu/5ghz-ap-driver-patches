@@ -224,7 +224,7 @@ unxz -v linux-5.13.19.tar.xz
 tar xvf linux-5.13.19.tar
 apt-get install build-essential libncurses-dev bison flex libssl-dev libelf-dev
 ```
-Clone this repo `git clone https://github.com/CristianVladescu/5ghz-ap-driver-patches`.
+Clone this repo `git clone https://github.com/CristianVladescu/5ghz-ap-driver-patches`.  
 Compile ath module:
 ```
 cd linux-5.10.140
